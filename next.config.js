@@ -21,7 +21,7 @@ module.exports = withPlugins([[withImages]], {
     config.resolve.modules.push(path.resolve("./"));
     return config;
   },
-  basePath: `/${process.env.BASE_PATH}`,
+  basePath: process.env.BASE_PATH?`/${process.env.BASE_PATH}`:"",
 //   async rewrites() {
 //     return rewrites();
 //   },

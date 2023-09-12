@@ -1,9 +1,9 @@
 import React from "react";
-import { withRouter, useRouter } from 'next/router';
+import { withRouter, useRouter } from "next/router";
 
 import {
   setSessionData,
-  makeOnlyConnectionRequest,
+  makeGatacaIssueOffer,
   addSetToSelection,
   setStepperSteps,
   setEndpoint,
@@ -11,20 +11,23 @@ import {
   setServerSessionId,
   completeDIDAuth,
   setSessionId,
-  setServerPort
+  setServerPort,
+  setCredentialToIssueType,
+  vcSentToUser,
 } from "../store";
-import { vcTypes } from "../config/vcTypes";
 import { connect } from "react-redux";
-import PairOrCard from "../components/updated/PairOrCard";
+
 import isMobile from "../utils/isMobile";
 import Head from "next/head";
 import LayoutNew from "../components/updated/LayoutNew";
-import ProceedIssuePrompt from "../components/ProceedIssuePrompt";
+import WebsocketComp from "../components/updated/WebSocketComp";
+import Typography from "@mui/material/Typography";
+import Box from "@mui/material/Box";
 
 class IssueServiceCard extends React.Component {
   constructor(props) {
     super(props);
-    this.onConnected= this.onConnected.bind(this);
+    this.onIssueFinished = this.onIssueFinished.bind(this);
 
     const router = this.props.router;
     const { sessionId } = router.query;
@@ -32,16 +35,17 @@ class IssueServiceCard extends React.Component {
     this.dispatch = props.dispatch;
     this.isFetching = props.isFetching;
     this.sessionData = props.sessionData;
-    this.hasRequiredAttributes =
-      props.sessionData !== null && props.sessionData !== undefined;
   }
 
   static async getInitialProps({ reduxStore, req, query }) {
     let userData;
     let DIDOk;
-    let  sessionId = req? req.query.sessionId:query.sessionId
+    let credentialToIssueType;
+    let sessionId = req ? req.query.sessionId : query.sessionId;
     if (typeof window === "undefined") {
       userData = req.userData;
+      credentialToIssueType = req.credentialToIssueType;
+
       reduxStore.dispatch(setEndpoint(req.endpoint));
       let baseUrl = req.baseUrl ? `/${req.baseUrl}/` : "";
       reduxStore.dispatch(setBaseUrl(baseUrl));
@@ -56,9 +60,10 @@ class IssueServiceCard extends React.Component {
     if (userData) {
       reduxStore.dispatch(setSessionData(userData));
     }
-    if (DIDOk) {
-      reduxStore.dispatch(completeDIDAuth(sessionId));
+    if (credentialToIssueType) {
+      reduxStore.dispatch(setCredentialToIssueType(credentialToIssueType));
     }
+
     if (sessionId) {
       // console.log(`settting sessionId to ${sessionId}`)
       reduxStore.dispatch(setSessionId(sessionId));
@@ -70,7 +75,9 @@ class IssueServiceCard extends React.Component {
     // mapstatetoprops overrides these values if they match
     return {
       sessionData: userData,
+      credentialToIssueType: credentialToIssueType,
       qrData: reduxStore.getState().qrData,
+      gatacaSesssion: reduxStore.getState().gatacaSession,
       vcSent: false,
       sessionId: reduxStore.getState().sessionId,
       endpoint: reduxStore.getState().endpoint,
@@ -80,58 +87,102 @@ class IssueServiceCard extends React.Component {
   }
 
   componentDidMount() {
-    if (!this.props.DID) {
-      //if DID auth has not been completed
-      this.props.makeConnectionRequest(
-        this.props.sessionId,
-        this.props.baseUrl,
-        this.props.endpoint,
-        "eidas",
-        isMobile()
-      );
-    }
+    //sessionId, baseUrl, endpoint, vcType, credentialType, userData,isMobile
+    this.props.getGatacaIssueData(
+      this.props.sessionId,
+      this.props.baseUrl,
+      this.props.endpoint,
+      this.props.credentialToIssueType,
+      this.props.sessionData,
+      "eidas",
+      isMobile()
+    );
   }
 
-  onConnected(){
-    console.log("wallet Connected!!")
+  onIssueFinished() {
+    this.props.vcSentToUser();
   }
 
   render() {
- 
-    let promptCard = (
-      <ProceedIssuePrompt
-        hasRequiredAttributes={this.hasRequiredAttributes}
-        baseUrl={this.props.baseUrl}
-        uuid={this.props.sessionId}
-        vcType={vcTypes.kyb}
-        serverPort={this.props.serverPort}
-        endpoint={this.props.endpoint}
-      />
-    );
+    let gatacaQRData = this.props.gatacaQR;
 
-    let result = (
-      <PairOrCard
-        qrData={this.props.qrData}
-        DID={this.props.DID}
-        baseUrl={this.props.baseUrl}
-        uuid={this.props.uuid}
-        serverSessionId={this.props.serverSessionId}
-        card={promptCard}
-        vcSent={this.props.vcSent}
-        sealSession={this.props.sessionId}
-        credQROffer={this.props.credQROffer}
-        onConnected={this.onConnected}
-        isMobile= {isMobile()}
-        serverPort={this.props.serverPort}
-        endpoint={this.props.endpoint}
-      />
-    );
+    let mainDiv = <div></div>;
+
+    if (this.props.vcSent)
+      mainDiv = (
+        <Typography variant="body2" sx={{ mt: 4 }}>
+          <Box align="center">
+            The Credential you requested has been issued. You will receive a notification in your wallet shortly. 
+          </Box>
+        </Typography>
+      );
+
+    if (!this.props.vcSent)
+      mainDiv = this.props.isFetching ? (
+        <Typography sx={{ mt: 6, mb: 4 }} align="center">
+          Your Credential is being generated, please wait....
+          <Box fontWeight="fontWeightBold" display="inline">
+            <img
+              alt=""
+              src="/loader2.gif"
+              style={{
+                maxWidth: "15rem",
+                display: "block",
+                marginLeft: "auto",
+                marginRight: "auto",
+              }}
+            />
+          </Box>
+        </Typography>
+      ) : (
+        <Typography variant="body2" sx={{ mt: 4 }}>
+          <img
+            className="img-fluid"
+            style={{
+              display: "block",
+              margin: "auto",
+              maxHeight: "21rem",
+            }}
+            src={gatacaQRData}
+          />
+          <Box align="center">
+            Don't have a Wallet yet? Follow the next steps:
+          </Box>
+          <Box sx={{ mt: 2, ml: 10 }}>
+            <Box>
+              <b>Step 1</b> Download the GATACA Wallet app.{" "}
+              <a href="https://play.google.com/store/apps/details?id=com.gataca.identity">
+                Play
+              </a>{" "}
+              or{" "}
+              <a href="https://apps.apple.com/us/app/gataca/id1498607616">
+                App
+              </a>{" "}
+              store
+            </Box>
+            <Box>
+              <b>Step 2</b> With the GATACA Wallet, scan the QR code on the left
+              to accept the Credential on your mobile device.
+            </Box>
+          </Box>
+
+          <br />
+          <WebsocketComp
+            sessionId={this.props.gatacaSession}
+            onIssueFinished={this.onIssueFinished}
+          />
+        </Typography>
+      );
+
     return (
       <LayoutNew home activeStep={3}>
         <Head>
           <title>ERUA Issuer</title>
         </Head>
-        {result}
+
+        {mainDiv}
+
+        {}
       </LayoutNew>
     );
   }
@@ -151,6 +202,9 @@ function mapStateToProps(state) {
     endpoint: state.endpoint,
     credQROffer: state.credQROffer,
     serverPort: state.serverPort,
+    credentialToIssueType: state.credentialToIssueType,
+    gatacaQR: state.gatacaQR,
+    gatacaSession: state.gatacaSession,
   };
 }
 
@@ -166,10 +220,28 @@ const mapDispatchToProps = (dispatch) => {
       dispatch(setEndpoint(endpoint));
     },
 
- 
-    makeConnectionRequest: (sessionId, baseUrl, endpoint, vcType, isMobile) => {
-      dispatch(makeOnlyConnectionRequest(sessionId, baseUrl,endpoint, vcType, isMobile));
+    getGatacaIssueData: (
+      sessionId,
+      baseUrl,
+      endpoint,
+      vcType,
+      credentialType,
+      userData,
+      isMobile
+    ) => {
+      dispatch(
+        makeGatacaIssueOffer(
+          sessionId,
+          baseUrl,
+          endpoint,
+          vcType,
+          credentialType,
+          userData,
+          isMobile
+        )
+      );
     },
+
     didAuthOK: (uuid) => {
       dispatch(completeDIDAuth(uuid));
     },
@@ -179,7 +251,14 @@ const mapDispatchToProps = (dispatch) => {
     setServerPort: (port) => {
       dispatch(setServerPort(port));
     },
+
+    vcSentToUser: () => {
+      dispatch(vcSentToUser());
+    },
   };
 };
 
-export default connect(mapStateToProps, mapDispatchToProps)(withRouter(IssueServiceCard));
+export default connect(
+  mapStateToProps,
+  mapDispatchToProps
+)(withRouter(IssueServiceCard));

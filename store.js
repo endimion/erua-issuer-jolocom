@@ -34,6 +34,10 @@ const initialState = {
 
   userDetails: null,
   serverPort: "",
+  optionalCredentials: [],
+  credentialToIssue: null,
+  gatacaQR: null,
+  gatacaSession: null,
 };
 
 export const actionTypes = {
@@ -83,14 +87,26 @@ export const actionTypes = {
   JOLO_VC_GENERATED: "JOLO_VC_GENERATED",
 
   SET_SERVER_PORT: "SERVER_PORT",
+  SET_OPTIONAL_CREDENTIALS: "SET_OPTIONAL_CREDENTIALS",
+  SET_CREDENTIAL_TO_ISSUE_TYPE: "SET_CREDENTIAL_TO_ISSUE_TYPE",
+  SET_GATACA_QR_DATA: "SET_GATACA_QR_DATA",
 };
 
 // REDUCERS
 const reducer = (state = initialState, action) => {
   switch (action.type) {
+    case actionTypes.SET_GATACA_QR_DATA:
+      return { ...state, gatacaQR: action.data.qr, gatacaSession: action.data.gatacaSession,  fetching: false, };
+
+    case actionTypes.SET_CREDENTIAL_TO_ISSUE_TYPE:
+      return { ...state, credentialToIssue: action.data };
+
+    case actionTypes.SET_OPTIONAL_CREDENTIALS:
+      return { ...state, optionalCredentials: action.data };
+
     case actionTypes.SET_SERVER_PORT:
       return { ...state, serverPort: action.data };
-    
+
     case actionTypes.SAVE_USER_DETAILS:
       return { ...state, userStoreDetails: action.data };
 
@@ -331,6 +347,28 @@ export function setSessionData(sessionData) {
   };
 }
 
+export function setOptionalCredentials(optionalCredentials) {
+  return (dispatch) => {
+    // console.log(`store.js setSessionData called with::`);
+    // console.log(sessionData)
+    dispatch({
+      type: actionTypes.SET_OPTIONAL_CREDENTIALS,
+      data: optionalCredentials,
+    });
+  };
+}
+
+export function setCredentialToIssueType(credentialType) {
+  return (dispatch) => {
+    // console.log(`store.js setSessionData called with::`);
+    // console.log(sessionData)
+    dispatch({
+      type: actionTypes.SET_CREDENTIAL_TO_ISSUE_TYPE,
+      data: credentialType,
+    });
+  };
+}
+
 export function setUserAttributeSelection(selectedAttributes) {
   return (dispatch) => {
     dispatch({
@@ -523,7 +561,7 @@ export function makeAndPushVC(
         console.log(err);
         dispatch({ type: actionTypes.VC_ISSUE_FAILED });
       });
-    //TODO add here an action denoting that the VC was sent
+ 
   };
 }
 
@@ -559,7 +597,9 @@ export function makeAndPushVC(
 
 export function requestVC(url, vcType, sessionId, isMobile = false) {
   //requestVC(url, vcType, uuid, isMobile)
-  console.log(`store js requestVC(${url}, ${vcType}, ${sessionId}, ${isMobile})`)
+  console.log(
+    `store js requestVC(${url}, ${vcType}, ${sessionId}, ${isMobile})`
+  );
   return (dispatch) => {
     axios
       .post(url, {
@@ -612,32 +652,45 @@ export function makeSealSession(baseUrl) {
   };
 }
 
-export function makeOnlyConnectionRequest(
+//TODO move the code into a service for re-usability
+export function makeGatacaIssueOffer(
   sessionId,
   baseUrl,
   endpoint,
-  vcType = "didAuth",
+  credentialType,
+  userData,
   isMobile
 ) {
   let postData = {
     endpoint: endpoint,
     sessionId: sessionId,
-    vcType: vcType,
+    credentialType: credentialType,
+    userData: userData,
   };
 
-  console.log(`store.js makeOnlyConnectionRequest isMobile ${isMobile}`)  
+  //console.log(`store.js makeGatacaIssueOffer isMobile ${isMobile}`)
   if (isMobile) {
     postData.isMobile = isMobile;
   }
   return (dispatch) => {
     dispatch({ type: actionTypes.MAKE_QR_AUTH_REQUEST });
-    let  path = baseUrl?`/${baseUrl}/makeConnectionRequest`:"/makeConnectionRequest"
-    axios.post(path, postData).then((data) => {
-      return dispatch({
-        type: actionTypes.GET_QR_AUTH_RESPONSE,
-        data: data.data,
+
+    let path = baseUrl
+      ? `/${baseUrl}/makeGatacaIssueOffer`
+      : "/makeGatacaIssueOffer";
+    axios
+      .post(path, postData)
+      .then((data) => {
+        // console.log(`store.js makeGatacaIssueOffer response data ${data.data.qr}`)
+        return dispatch({
+          type: actionTypes.SET_GATACA_QR_DATA,
+          data: data.data,
+        });
+      })
+      .catch((error) => {
+        console.log("store.js makeGatacaIssueOffer ERROR calling " + path);
+        console.log(error);
       });
-    });
   };
 }
 
@@ -748,7 +801,6 @@ export function setServerPort(port) {
     });
   };
 }
-
 
 export const initializeStore = (preloadedState = initialState) => {
   return createStore(

@@ -22,16 +22,27 @@ export default function IndexForm(props) {
       </Head>
 
       <Typography variant="h5" sx={{ mt: 6, mb: 4 }}>
-        ERUA Issuer Service
+        Welcome to the ERUA Issuer Service  
       </Typography>
+      {/* <Typography variant="h7" sx={{ mt: 6, mb: 4 }}>
+        Using this service you can generate credentials stored to your wallet
+        that allow you access to the shared services of the ERUA Alliance as
+        well as contain attestations of your achievements as a member of the
+        alliance.
+      </Typography> */}
       <Typography sx={{ mt: 6, mb: 4 }}>
-        To generate your ERUA ID please authenticate using:
+        To access the service click the following button. You will be asked to
+        select your prefered means of authentication:
         <Box fontWeight="fontWeightBold" display="inline">
           <List>
             <ListItem disablePadding>
-              <ListItemButton>
-                <ListItemText primary="1. Your Home Instituion Credentials" />
-              </ListItemButton>
+              <ListItemText primary="1. Your Home Instituion Credentials - for members of the ERUA Alliance" />
+            </ListItem>
+            <ListItem disablePadding>
+              <ListItemText primary="2. ERUA-iD - for the members of the ERUA Alliance already in possession of AcademicID and AllianceID credentials" />
+            </ListItem>
+            <ListItem disablePadding>
+              <ListItemText primary="3. Your European Digital Identity" />
             </ListItem>
           </List>
         </Box>
@@ -43,13 +54,14 @@ export default function IndexForm(props) {
           variant="contained"
           size="large"
           type="submit"
+         
           // onClick={() => {
           //   console.log(constants.BASE_PATH? `/${constants.BASE_PATH}/login`:"login")
           //   window.location = props.basePath? `/${props.basePath}/login`:"login"//"/login";
           // }}
         >
-          <Link href="login">
-             <a>Access the service</a>
+          <Link href="login" >
+            <span  style={{color:"white"}}>Access the service</span>
           </Link>
         </Button>
       </Box>

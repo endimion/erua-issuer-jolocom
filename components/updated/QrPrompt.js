@@ -106,9 +106,10 @@ const QrPrompt = (props) => {
                   className="img-fluid"
                   style={{ display: "block", margin: "auto" }}
                   src={
-                    props.baseUrl
-                      ? `${props.baseUrl}app-store.png`
-                      : "/app-store.png"
+                    // props.baseUrl
+                    //   ? `${props.baseUrl}/app-store.png`
+                    //   : 
+                      "/app-store.png"
                   }
                 />
               </a>
@@ -124,9 +125,10 @@ const QrPrompt = (props) => {
                   className="img-fluid"
                   style={{ display: "block", margin: "auto" }}
                   src={
-                    props.baseUrl
-                      ? `${props.baseUrl}play-store.png`
-                      : "/play-store.png"
+                    // props.baseUrl
+                    //   ? `${props.baseUrl}/play-store.png`
+                    //   : 
+                      "/play-store.png"
                   }
                 />
               </a>

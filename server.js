@@ -1,39 +1,35 @@
 import { getSessionConfg, getCacheStore } from "./config/sessionConf";
 import { configServer } from "./config/serverConfig";
-import { initAgent } from "./config/jolocomAgent";
 import {
   landingPage,
   verifyUserDetailsPage,
   issueServiceCard,
+  selectCredentialtoIssue,
 } from "./controllers/views-controllers";
-
-import {
-  makeConnectionRequestController,
-  handleConnectionResponse,
-  handleVCRequestController,
-  handleVCResponseController,
-} from "./controllers/jolocom-api-controller";
 import { jwksController } from "./controllers/jwks-controllers";
 import { subscribe } from "./services/sse-service";
 import { searchDbController } from "./controllers/seach-db-controllers";
-import { saveUserToDB } from "./controllers/dBControllers";
-
+import axios from "axios";
+import { getSessionData, setOrUpdateSessionData } from "./services/redis";
 
 // import winston from "winston";
 // import expressWinston from "express-winston";
-const cors = require("cors");
-const KeycloakMultiRealm = require("./config/KeycloakMultiRealm");
 const express = require("express");
+
+
+
+// QR Generation
+const qr = require("qr-image");
+const imageDataURI = require("image-data-uri");
+import { streamToBuffer } from "@jorgeferrero/stream-to-buffer";
+// JWT stuff needed for Gataca
+import isJwtTokenExpired, { decode } from "jwt-check-expiry";
+//
 const https = require("https");
-const fs = require("fs");
 const next = require("next");
-const jsesc = require("jsesc");
-const request = require("request-promise");
 const constants = require("./utils/consts");
 const bodyParser = require("body-parser");
 const session = require("express-session");
-const axios = require("axios");
-const moment = require("moment");
 const dev = constants.NODE_ENV !== "production";
 const app = next({ dev });
 const handle = app.getRequestHandler();
@@ -44,29 +40,12 @@ const { passportController } = require("./controllers/security/passport");
 const isProduction = constants.NODE_ENV === "production";
 const SESSION_CONF = getSessionConfg(isProduction);
 
-const Prometheus = require("prom-client");
-// Create a Registry which registers the metrics
-const register = new Prometheus.Registry();
-// Add a default label which is added to all metrics
-register.setDefaultLabels({
-  app: "pameas-messaging-service",
-});
-// Enable the collection of default metrics
-Prometheus.collectDefaultMetrics({ register });
-
-// configure Keycloak connector for OIDC support
-const eruaConfig = JSON.parse(
-  fs.readFileSync("./config/keycloakRealms/erua.json")
-);
-const keycloak = new KeycloakMultiRealm({ store: getCacheStore() }, [
-  // esmoRealmConfig,
-  eruaConfig,
-]);
-
 //Configure and Start the server
 let serverConfiguration = { endpoint: "" };
 
 app.prepare().then(async () => {
+  
+  
   const server = express();
   server.set("trust proxy", 1); // trust first proxy
   server.use(bodyParser.urlencoded({ extended: true }));
@@ -74,16 +53,13 @@ app.prepare().then(async () => {
   server.use(session(SESSION_CONF));
   server.use(cookieParser());
 
-  // server.use(keycloak.middleware());
-
-  // initiate the jolocom agent
-
-  let issuerAgent = null; //await initAgent();
-
   //CONTROLLERS
 
   //sse
-  server.get(["/issuer-events", `\/${constants.BASE_PATH}/issuer-events`], subscribe);
+  server.get(
+    ["/issuer-events", `\/${constants.BASE_PATH}/issuer-events`],
+    subscribe
+  );
 
   //view
   server.get(
@@ -103,31 +79,9 @@ app.prepare().then(async () => {
     }
   );
 
-  server.get(["/pair-device"], async (req, res) => {
-    console.log("/pair-device");
-    return pairDeviceController(app, req, res, serverConfiguration.endpoint);
-  });
-
   server.post(["/generate-qr"], async (req, res) => {
     console.log("/generate-qr");
     return getQRCode(req, res, serverConfiguration.endpoint);
-  });
-
-  server.post(["/add-device"], async (req, res) => {
-    console.log("/add-device");
-    return addDevice(req, res, serverConfiguration.endpoint);
-  });
-
-  server.get(["/ticketInfo"], async (req, res) => {
-    console.log("/ticketInfo");
-    // console.log(req.session.passport.user)
-    return ticketInfo(app, req, res, serverConfiguration.endpoint);
-  });
-
-  //data-base api
-  server.post(["/storeUser"], async (req, res) => {
-    console.log("/storeUser");
-    saveUserToDB(req, res);
   });
 
   server.get(
@@ -138,20 +92,111 @@ app.prepare().then(async () => {
       `\/${constants.BASE_PATH}/issue_card`,
     ],
     async (req, res) => {
-      console.log("/issue");
+      console.log("server.js /issue");
       // console.log(req.session.passport.user); //works ok to fetch the userdetails
-      req.port=constants.PORT
+      req.port = constants.PORT;
       issueServiceCard(app, req, res, serverConfiguration.endpoint);
     }
   );
 
-  // Metrics endpoint
-  server.get("/metrics", async (req, res) => {
-    res.setHeader("Content-Type", register.contentType);
-    let result = register.metrics();
-    res.end(await register.metrics());
-  });
+  server.get(
+    ["/select_credential", `\/${constants.BASE_PATH}/select_credential`],
+    async (req, res) => {
+      console.log("server.js /select_credential");
+      req.port = constants.PORT;
+      selectCredentialtoIssue(app, req, res, serverConfiguration.endpoint);
+    }
+  );
 
+  // **********************************
+
+  //gataca
+  //TODO move this into a service 
+  server.post(
+    ["/makeGatacaIssueOffer", `\/${constants.BASE_PATH}/makeGatacaIssueOffer`],
+    async (req, res) => {
+      console.log("server.js /makeGatacaIssueOffer");
+      let sessionId = req.body.sessionId;
+      let userData = req.body.sessionId.userData;
+
+      let basicAuthString =
+        process.env.GATACA_APP + ":" + process.env.GATACA_PASS;
+      let buff = new Buffer(basicAuthString);
+      let base64data = buff.toString("base64");
+      console.log(base64data);
+      let options = {
+        method: "POST",
+        url: constants.GATACA_CERTIFY_URL,
+        headers: {
+          Authorization: `Basic ${base64data}`,
+        },
+      };
+
+      try {
+        // by setting the sessionId to "gataca_jwt" same as the variable this becomes a globaly accessible cached value
+        // so all calls will use the same token until its expired
+
+        let gatacaAuthToken = await getSessionData("gataca_jwt", "gataca_jwt");
+        if (!gatacaAuthToken || isJwtTokenExpired(gatacaAuthToken)) {
+          console.log(
+            "severs.js makeGatacaIssueOffer will ask for new authtoken"
+          );
+          const gatacaTokenResponse = await axios.request(options);
+          gatacaAuthToken = gatacaTokenResponse.headers.token;
+          setOrUpdateSessionData("gataca_jwt", "gataca_jwt", gatacaAuthToken);
+        }
+
+        options = {
+          method: "POST",
+          url: constants.GATACA_CREDENTIAL_ISSUE_SESSION_URL,
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `jwt ${gatacaAuthToken}`,
+          },
+          data: { group: "Academic_And_AllianceID" },
+        };
+        axios
+          .request(options)
+          .then(async function (response) {
+            console.log(response.data.id);
+            let issueSessionId = response.data.id;
+            let buff = new Buffer("https%3A%2F%2Fcertify.gataca.io");
+            let base64Callbackdata = buff.toString("base64");
+
+            let qrPartialData =
+              "https://gataca.page.link/credential?process=" +
+              issueSessionId +
+              "&callback=" +
+              base64Callbackdata;
+            let qrData =
+              "https://gataca.page.link/?apn=com.gatacaapp&ibi=com.gataca.wallet&link=" +
+              encodeURIComponent(qrPartialData);
+
+            console.log(qrData);
+
+            let code = qr.image(qrData, {
+              type: "png",
+              ec_level: "H",
+              size: 10,
+              margin: 10,
+            });
+            let mediaType = "PNG";
+            let encodedQR = imageDataURI.encode(
+              await streamToBuffer(code),
+              mediaType
+            );
+            res.send({ qr: encodedQR, gatacaSession: issueSessionId});
+          })
+          .catch(function (error) {
+            console.error(error);
+            res.send({ error: error });
+          });
+      } catch (error) {
+        console.error(error);
+        res.send({ error: error });
+      }
+    }
+  );
   // **********************************
 
   // session
@@ -166,6 +211,7 @@ app.prepare().then(async () => {
       await startSession(app, req, res, serverConfiguration.endpoint);
     }
   );
+
   server.post(
     [
       "/update-session",
@@ -175,57 +221,6 @@ app.prepare().then(async () => {
     async (req, res) => {
       console.log("/update-session ");
       res.send(await updateSession(req, res, serverConfiguration.endpoint));
-    }
-  );
-
-  //jolo
-  server.post(
-    [
-      "/makeConnectionRequest",
-      "/palaemon/makeConnectionRequest",
-      `\/${constants.BASE_PATH}/makeConnectionRequest`,
-    ],
-    async (req, res) => {
-      console.log("/makeConnectionRequest");
-      makeConnectionRequestController(req, res, issuerAgent);
-    }
-  );
-
-  server.post(
-    [
-      "/connectionResponse",
-      "/palaemon/connectionResponse",
-      `\/${constants.BASE_PATH}/connectionResponse`,
-    ],
-    async (req, res) => {
-      console.log("/connectionResponse");
-      handleConnectionResponse(req, res, issuerAgent);
-    }
-  );
-
-  server.post(
-    ["/issueVC", "/palaemon/issueVC", `\/${constants.BASE_PATH}/issueVC`],
-    async (req, res) => {
-      console.log("/issueVC");
-      // console.log(req.body)
-      handleVCRequestController(
-        req,
-        res,
-        issuerAgent,
-        serverConfiguration.endpoint
-      );
-    }
-  );
-
-  server.post(
-    [
-      "/offerResponse",
-      "/palaemon/offerResponse",
-      `\/${constants.BASE_PATH}/offerResponse`,
-    ],
-    async (req, res) => {
-      console.log("/offerResponse");
-      handleVCResponseController(req, res, issuerAgent);
     }
   );
 
@@ -251,8 +246,5 @@ app.prepare().then(async () => {
     return handle(req, res);
   });
 
-  // moved after server startup to speed boot up for dev
-  console.log("--- initiating jolocom agent---");
-  issuerAgent = await initAgent();
-  console.log("--- agent ready ---");
+
 });

@@ -9,7 +9,7 @@ const https = require("https");
 const jose = require("node-jose");
 const fs = require("fs");
 const constants = require("../../utils/consts");
-import { defaultClaims } from "../../config/defaultOidcClaims";
+
 
 // Part 3, create a JWKS
 const keyStore = jose.JWK.createKeyStore();
@@ -26,7 +26,7 @@ keyStore
 const getConfiguredPassport = async (
   isProduction,
   serverEndpoint,
-  claims = defaultClaims
+  claims = {}
 ) => {
   let _issuer_url = constants.ISSUER_URL;
 
@@ -65,55 +65,7 @@ const getConfiguredPassport = async (
     done(null, user);
   });
 
-  // creates a dynamic client for registration
-  function getDynClient(redirectURIs, jwksURI) {
-    const data = JSON.stringify({
-      application_type: "web",
-      redirect_uris: redirectURIs,
-      client_name: "palaemonClient",
-      subject_type: "pairwise",
-      token_endpoint_auth_method: "client_secret_basic",
-      jwks_uri: jwksURI,
-      userinfo_encrypted_response_alg: "RSA-OAEP-256",
-      userinfo_encrypted_response_enc: "A128CBC-HS256",
-    });
-
-    let USER_INFO = constants.USER_INFO;
-    const options = {
-      hostname: USER_INFO,
-      // port: 8180,
-      path: "/auth/realms/grnetEidas/clients-registrations/openid-connect",
-      method: "POST",
-      headers: {
-        Authorization: `Bearer eyJhbGciOiJIUzI1NiIsInR5cCIgOiAiSldUIiwia2lkIiA6ICJlZmEwNWNkNi1jMWFmLTQ1NjgtYjMzOS0zZGY4YTE4MjBjZGYifQ.eyJqdGkiOiIxYmU4MmZmNi1kYWI2LTQ1ZGMtOTA5NS0zNjRmNTg2Y2Q4YTkiLCJleHAiOjE3NDk3MjUwMjUsIm5iZiI6MCwiaWF0IjoxNjYzMzI1MDI1LCJpc3MiOiJodHRwczovL2RzczEuYWVnZWFuLmdyL2F1dGgvcmVhbG1zL3BhbGFlbW9uLWxvY2FsIiwiYXVkIjoiaHR0cHM6Ly9kc3MxLmFlZ2Vhbi5nci9hdXRoL3JlYWxtcy9wYWxhZW1vbi1sb2NhbCIsInR5cCI6IkluaXRpYWxBY2Nlc3NUb2tlbiJ9.pmyGfojHq5WFCmW0qYQsV2eLtYx_KKXxubZbv-emP6c`,
-        "Content-Type": "application/json",
-        "Content-Length": data.length,
-      },
-    };
-
-    return new Promise((resolve, reject) => {
-      let req = https.request(options);
-
-      req.on("response", (res) => {
-        const chunks = [];
-        res.on("data", function (chunk) {
-          chunks.push(chunk);
-        });
-        res.on("end", function () {
-          const body = Buffer.concat(chunks);
-          console.log("passpppport.js client registration response");
-          console.log(body.toString());
-          resolve(body.toString());
-        });
-      });
-
-      req.on("error", (err) => {
-        reject(err);
-      });
-      req.write(data);
-      req.end();
-    });
-  }
+ 
 
   router.use(passport.initialize());
   router.use(passport.session());
@@ -159,14 +111,6 @@ const getConfiguredPassport = async (
   return { passport: passport, client: client };
 };
 
-/*
- claims,
-    passport,
-    _user_info_request,
-    _user_info_port,
-    client,
-    jwt
-*/
 
 const addClaimsToStrategy = (
   claims,
@@ -176,18 +120,6 @@ const addClaimsToStrategy = (
   client,
   jwt = null
 ) => {
-  // if (jwt) {
-  //   console.log(`passport.js: ${jwt}`);
-  //   finalParams = {
-  //     scope: "openid profile",
-  //     request: jwt,
-  //   };
-  // } else {
-  //   finalParams = {
-  //     scope: "openid profile",
-  //     claims: claims,
-  //   };
-  // }
   let finalParams = {
     scope: "openid profile",
   };
@@ -201,32 +133,6 @@ const addClaimsToStrategy = (
 
     async function (accessToken, refreshToken, profile, cb) {
       try {
-        const options = {
-          hostname: "dss1.aegean.gr", //_user_info_request,
-          // port: _user_info_port,
-          path: "/auth/realms/grnetEidas/protocol/openid-connect/userinfo",
-          method: "GET",
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-            "Content-Length": "0",
-          },
-        };
-        const httpsReq = https.request(options, function (res) {
-          const chunks = [];
-          res.on("data", function (chunk) {
-            chunks.push(chunk);
-          });
-          res.on("end", function () {
-            const body = Buffer.concat(chunks);
-            console.log("******* USER INFO **********************");
-            console.log(body.toString());
-          });
-        });
-        httpsReq.end();
-
-        // console.log("***********************!@@@@@@@@@@@@@@@((((((((((((((((((!!!!!!!!!")
-        // console.log(profile)
-
         return cb(null, { profile });
       } catch (err) {
         console.log(err);

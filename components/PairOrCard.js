@@ -7,7 +7,8 @@ const constants = require('../utils/consts')
 const PairOrCard = (props) => {
 
 
-  let finishImgUrl = constants.BASE_PATH? `/${constants.BASE_PATH}/finished.png` :"/finished.png" 
+  let finishImgUrl = //constants.BASE_PATH? `/${constants.BASE_PATH}/finished.png` :
+  "/finished.png" 
 
 
   

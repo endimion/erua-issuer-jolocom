@@ -1,4 +1,4 @@
-const constants = require("../utils/consts")
+const constants = require("../utils/consts");
 const ngrok = require("ngrok");
 const fs = require("fs");
 const {
@@ -15,11 +15,7 @@ const configServer = (
   serverConfiguration
 ) => {
   return new Promise((resolve, reject) => {
-    if (
-      constants.KEY_PATH &&
-      constants.CERT_PATH &&
-      constants.CERT_PASS
-    ) {
+    if (constants.KEY_PATH && constants.CERT_PATH && constants.CERT_PASS) {
       let key = fs.readFileSync(constants.KEY_PATH);
       let cert = fs.readFileSync(constants.CERT_PATH);
       let passphrase = constants.CERT_PASS;
@@ -41,6 +37,8 @@ const configServer = (
           return serverConfiguration.endpoint;
         });
     } else {
+    
+
       server.listen(port, async (err) => {
         if (err) throw err;
 
@@ -54,8 +52,8 @@ const configServer = (
             isProduction,
             serverConfiguration.endpoint
           );
-          console.log(`serverConfig.js:: finshed passport config`)
-          console.log(client)
+          console.log(`serverConfig.js:: finshed passport config`);
+          console.log(client);
           resolve({
             endpoint: serverConfiguration.endpoint,
             passport: passport,

@@ -53,18 +53,32 @@ import Paper from "@mui/material/Paper";
 
 import CustomStepper from "./stepper.js";
 import { connect } from "mongoose";
-const constants = require("../../utils/consts")
+const constants = require("../../utils/consts");
 
-let eruaLogonURL = constants.BASE_PATH? `/${constants.BASE_PATH}/img/erua.png` :"/img/erua.png" 
-let patternURL = constants.BASE_PATH? `/${constants.BASE_PATH}/pattern.svg` :"/pattern.svg" 
-let profileURL = constants.BASE_PATH? `/${constants.BASE_PATH}/profile.svg` :"/profile.svg" 
-let signURL = constants.BASE_PATH? `/${constants.BASE_PATH}/sign.svg` :"/sign.svg" 
-let connectURL = constants.BASE_PATH? `/${constants.BASE_PATH}/connect.jpg` :"/connect.jpg" 
-let euFlagURL = constants.BASE_PATH? `/${constants.BASE_PATH}/eu_flag.jpg` :"/eu_flag.jpg" 
-let mailURL = constants.BASE_PATH? `/${constants.BASE_PATH}/mail.svg` :"/mail.svg" 
-let linkedInURL = constants.BASE_PATH? `/${constants.BASE_PATH}/linkedin.svg` :"/linkedin.svg" 
-
-
+let eruaLogonURL = constants.BASE_PATH
+  ? `/${constants.BASE_PATH}/img/erua.png`
+  : "/img/erua.png";
+let patternURL = constants.BASE_PATH
+  ? `/${constants.BASE_PATH}/pattern.svg`
+  : "/pattern.svg";
+let profileURL = constants.BASE_PATH
+  ? `/${constants.BASE_PATH}/profile.svg`
+  : "/profile.svg";
+let signURL = constants.BASE_PATH
+  ? `/${constants.BASE_PATH}/sign.svg`
+  : "/sign.svg";
+let connectURL = constants.BASE_PATH
+  ? `/${constants.BASE_PATH}/connect.jpg`
+  : "/connect.jpg";
+let euFlagURL = constants.BASE_PATH
+  ? `/${constants.BASE_PATH}/eu_flag.jpg`
+  : "/eu_flag.jpg";
+let mailURL = constants.BASE_PATH
+  ? `/${constants.BASE_PATH}/mail.svg`
+  : "/mail.svg";
+let linkedInURL = constants.BASE_PATH
+  ? `/${constants.BASE_PATH}/linkedin.svg`
+  : "/linkedin.svg";
 
 export default function LayoutNew(props, { children, home }) {
   const [anchorEl, setAnchorEl] = React.useState(null);
@@ -90,7 +104,12 @@ export default function LayoutNew(props, { children, home }) {
     setMobileMoreAnchorEl(event.currentTarget);
   };
 
-  const steps = ["Authenticate", "Confirm Details", "Pair Device"];
+  const steps = [
+    "Authenticate",
+    "Confirm Details",
+    "Select Credential",
+    "Issue Credential",
+  ];
 
   return (
     <Box sx={{ flexGrow: 1 }}>
@@ -102,7 +121,7 @@ export default function LayoutNew(props, { children, home }) {
               alt=""
               className="kyb"
               width="100%"
-              style={{"width":"50%"}}
+              style={{ width: "50%" }}
             />
           </Grid>
 
@@ -141,8 +160,12 @@ export default function LayoutNew(props, { children, home }) {
                     {props.activeStep + 1}. Authenticate
                   </Typography>
                   <Typography variant="body2" sx={{ mt: 4 }}>
-                    In order to generate your ERUA ID you will first need to authenticate using your home instituion (HEI) credentials. 
-                    Please not that only ERUA Alliance affiliated students will be allowed to do so. 
+                    Using this service you can generate credentials stored to
+                    your wallet that allow you access to the shared services of
+                    the ERUA Alliance as well as contain attestations of your
+                    achievements as a member of the alliance. After
+                    authentication you will be displayed with a list of all
+                    Credentials that are available for you to issue.
                     <br />
                   </Typography>
                   <Box my={3} sx={{ width: { md: "100%", xs: "50%" } }}>
@@ -160,16 +183,20 @@ export default function LayoutNew(props, { children, home }) {
                     color="text.secondary"
                     gutterBottom
                   >
-                    Validate
+                    Verification
                   </Typography>
                   <Typography variant="h5" component="div">
                     {props.activeStep + 1}. Verify your Details
                   </Typography>
                   <Typography variant="body2" sx={{ mt: 4 }}>
-                    You have accessed the ERUA Issuer
-                    service. <br />
-                    Before providing the rest of your details, please ensure
-                    your Personal Identification Information below is correct
+                    You have accessed the ERUA Issuer service. <br />
+                    Please ensure your Personal Identification Information
+                    presented in the adjustent table is correct. If the
+                    presented information is correct you can proceed to
+                    selecting one of the credentials that are available to you
+                    for issuance by clicking "Continue". If the information is
+                    not correct, please contact your Home Institutions Identity
+                    Provider.
                     <br />
                   </Typography>
 
@@ -188,23 +215,20 @@ export default function LayoutNew(props, { children, home }) {
                     color="text.secondary"
                     gutterBottom
                   >
-                    Profile
+                    Select
                   </Typography>
                   <Typography variant="h5" component="div">
-                    {props.activeStep + 1}. Complete your Profile
+                    {props.activeStep + 1}. Select Credential
                   </Typography>
                   <Typography variant="body2" sx={{ mt: 4 }}>
-                   Please fill in the following form by
-                   providing all the necessary details. These dataw
-                   will help us ensure you receive the best 
-                   assistance in case of an emergency <br />
+                    Based on the information you provided during authentication
+                    you are entitled to issue the following credentials. Please
+                    select one category of credentials you want to issue by
+                    clicking the respective button to proceed with the issuance
+                    of your credential. <br />
                   </Typography>
                   <Box my={3}>
-                    <img
-                      src={connectURL}
-                      alt="information"
-                      width="100%"
-                    />
+                    <img src={connectURL} alt="information" width="100%" />
                   </Box>
                 </CardContent>
               </Card>
@@ -218,15 +242,18 @@ export default function LayoutNew(props, { children, home }) {
                     color="text.secondary"
                     gutterBottom
                   >
-                    Register
+                    Credential Issuance powered by UAegean via GATACA.
                   </Typography>
                   <Typography variant="h5" component="div">
-                    {props.activeStep + 1}. Connect your Jolocom Smart Wallet
+                    {props.activeStep + 1}. Receive your Credential
                   </Typography>
                   <Typography variant="body2" sx={{ mt: 4 }}>
-                    In order to complete the process you need to connect your
-                    Jolocom Smart Wallet. If you do not have it installed you
-                    can download it from one of the available links <br />
+                    Scan with an EBSI wallet or tap to receive your Credential.
+                    Your wallet will prompt you if you wish to store this
+                    credential by UAegean. If you accept, you will receive a
+                    notification in your wallet once issuance is completed. It
+                    is all automated!
+                    <br />
                   </Typography>
 
                   <Box my={3}>
@@ -235,7 +262,6 @@ export default function LayoutNew(props, { children, home }) {
                 </CardContent>
               </Card>
             ) : null}
-
 
             {props.activeStep == 4 ? (
               <Card variant="outlined">
@@ -257,17 +283,11 @@ export default function LayoutNew(props, { children, home }) {
                     of emergency directly on your phone <br />
                   </Typography>
                   <Box my={3}>
-                    <img
-                      src={connectURL}
-                      alt="information"
-                      width="100%"
-                    />
+                    <img src={connectURL} alt="information" width="100%" />
                   </Box>
                 </CardContent>
               </Card>
             ) : null}
-
-
           </Grid>
         </Grid>
 
@@ -278,8 +298,11 @@ export default function LayoutNew(props, { children, home }) {
           </Grid>
           <Grid item md={6} xs={8}>
             <Typography>
-            The European Commission's support for the production of this publication does not constitute an endorsement of the contents, which reflect the views only of the authors, and the Commission
-             cannot be held responsible for any use which may be made of the information contained therein.
+              The European Commission's support for the production of this
+              publication does not constitute an endorsement of the contents,
+              which reflect the views only of the authors, and the Commission
+              cannot be held responsible for any use which may be made of the
+              information contained therein.
             </Typography>{" "}
             <br />
           </Grid>

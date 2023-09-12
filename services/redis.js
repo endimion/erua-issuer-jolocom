@@ -50,7 +50,8 @@ const getSessionData = async (sessionId, variableName=null) => {
         if (variableName !== null) {
           try {
             let valueAsObject = JSON.parse(data);
-            resolve(valueAsObject[variableName]);
+            if(valueAsObject == null) resolve(null)
+            else resolve(valueAsObject[variableName]);
           } catch (err) {
             reject(err);
           }

@@ -22,11 +22,16 @@ module.exports = Object.freeze({
     ? process.env.OIDC_REDIRECT_URI
     : `http://localhost:5030/login/callback`,
 
-  OIDC_CLIENT: process.env.OIDC_CLIENT? process.env.OIDC_CLIENT : "erua-issuer",
-  OIDC_CLIENT_SECRET: process.env.OIDC_CLIENT_SECRET? process.env.OIDC_CLIENT_SECRET : "TXTBJVXwWvZvEOuoxC4yRF6srcUtd0Ho",
+  OIDC_CLIENT: process.env.OIDC_CLIENT,
+  OIDC_CLIENT_SECRET: process.env.OIDC_CLIENT_SECRET,
 
 
   EMAIL_USER: process.env.EMAIL_USER,
   EMAIL_PASS: process.env.EMAIL_PASS,
+  GATACA_CERTIFY_URL: "https://nucleus.gataca.io/admin/v1/api_keys/login",
+  GATACA_CREDENTIAL_ISSUE_SESSION_URL:"https://certify.gataca.io/api/v1/issuanceRequests",
+
+  WS_URL : process.env.WS_URL?process.env.WS_URL:"ws://localhost:5000"
+  
 });
 

@@ -7,6 +7,7 @@ import Container from "@mui/material/Container";
 import Typography from "@mui/material/Typography";
 
 const CustomStepper = (props) => {
+  console.log(`stepper.js step is ${props.activeStep}`)
   return (
     <Stepper activeStep={props.activeStep}>
       {props.steps.map((label, index) => {

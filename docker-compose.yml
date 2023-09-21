@@ -10,7 +10,8 @@ services:
      - "6379:6379"
 
    erua-issuer:
-    image: endimion13/erua-issuer:0.0.1a
+   # image: endimion13/erua-issuer:0.0.1j
+    image: endimion13/erua-gataca-issuer:0.0.1b
     environment:
       NODE_ENV: "production"
       # for SSL: KEY_PATH:
@@ -19,11 +20,15 @@ services:
       ENDPOINT: "http://localhost"
       PORT: "5030"
       REDIS: "redis"
-      ISSUER_URL: "https://dss.aegean.gr/auth/realms/erua-issuer"
-      OIDC_REDIRECT_URI: "http://localhost:5030/login/callback"
+      OIDC_REDIRECT_URI: "http://localhost/erua-issuer/login/callback"
       USER_INFO: "dss1.aegean.gr"
       USER_INFO_PORT: "8180"
       BASE_PATH: 'erua-issuer'
+      OIDC_CLIENT: "erua-issuer"
+      OIDC_CLIENT_SECRET: "b272587a-c842-4e35-9ded-09782195c198"
+      WS_API: "http://dss.aegean.gr:5000"
+#
+      ISSUER_URL: "https://dss.aegean.gr/auth/realms/erua-issuer"
     ports:
       - 5030:5030
    
@@ -37,6 +42,27 @@ services:
       - ./certs:/etc/certs
     ports:
       - 80:80
+
+  #  gataca-helper:
+  #   image: endimion13/gataca-helper:0.0.2b
+  #   container_name: gataca-helper  
+  #   restart: unless-stopped
+  #   environment:
+  #     NODE_ENV: "production"
+  #     # for SSL: KEY_PATH:
+  #     # for SSL: CERT_PATH:
+  #     # for SSL: CERT_PASS:
+  #     PORT: "5000"
+  #     REDIS: "redis"
+  #     GATACA_CERTIFY_URL: "https://nucleus.gataca.io/admin/v1/api_keys/login"
+  #     GATACA_CHECK_ISSUE_STATUS_URL: "https://certify.gataca.io/admin/v1/issuanceRequests"
+  #     WS_INIT_SESSION: "start-session"
+  #     CORS_URI:  "http://localhost:8081,http://localhost"
+  #     GATACA_CREATE_VERIFICATION_SESSION_URL: "https://connect.gataca.io/api/v1/sessions"
+  #     GATACA_CHECK_VERIFICATION_STATUS_URL: "https://connect.gataca.io/api/v1/sessions"
+     
+  #   ports:
+  #     - 5000:5000
 
 
 

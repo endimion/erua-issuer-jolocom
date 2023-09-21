@@ -39,15 +39,15 @@ const CredentialSelectorComponent = (props) => {
           <ListItem disablePadding>
             <ListItemButton
               onClick={(event) => {
-                window.location.href = props.basePath
-                  ? `/${props.basePath}/issue_card?sessionId=${props.sessionId}&type=eruaID`
+                window.location.href = props.baseUrl
+                  ? `/${props.baseUrl}/issue_card?sessionId=${props.sessionId}&type=eruaID`
                   : `/issue_card?sessionId=${props.sessionId}&type=eruaID`;
               }}
             >
               <ListItemText primary="1. ERUA-iD (AcademicID and AllianceID Credentials)" />
             </ListItemButton>
           </ListItem>
-          {optionalCredentialsList}
+          {/* {optionalCredentialsList} */}
         </List>
       </Box>
     </Typography>

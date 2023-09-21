@@ -28,11 +28,6 @@
       "static/chunks/main.js",
       "static/chunks/webpack.js",
       "static/chunks/pages/issue_card.js"
-    ],
-    "/select_credential": [
-      "static/chunks/main.js",
-      "static/chunks/webpack.js",
-      "static/chunks/pages/select_credential.js"
     ]
   },
   "ampFirstPages": []

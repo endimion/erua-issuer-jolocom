@@ -160,6 +160,8 @@ app.prepare().then(async () => {
           .then(async function (response) {
             console.log(response.data.id);
             let issueSessionId = response.data.id;
+            console.log("SERVER.js makeGatacaIssueOffer")
+            console.log("SERVER.js GATACA SESSION" + issueSessionId)
             let buff = new Buffer("https%3A%2F%2Fcertify.gataca.io");
             let base64Callbackdata = buff.toString("base64");
 

@@ -53,7 +53,7 @@ const configServer = (
             serverConfiguration.endpoint
           );
           console.log(`serverConfig.js:: finshed passport config`);
-          console.log(client);
+          // console.log(client);
           resolve({
             endpoint: serverConfiguration.endpoint,
             passport: passport,

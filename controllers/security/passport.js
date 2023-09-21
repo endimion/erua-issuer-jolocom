@@ -66,7 +66,6 @@ const getConfiguredPassport = async (
   });
 
  
-
   router.use(passport.initialize());
   router.use(passport.session());
   // Part 2, configure authentication endpoints

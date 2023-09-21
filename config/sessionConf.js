@@ -1,7 +1,7 @@
 const session = require("express-session");
 const connectRedis = require("connect-redis");
 const redis = require('redis');
-const constants = require("../utils/consts")
+const constants = require("../utils/consts_backend")
 
 
 const RedisStore = connectRedis(session);
@@ -23,12 +23,12 @@ const getSessionConfg = (isProduction) => {
     maxExpiration: 90000,
     cookie: { secure: false },
   };
-  if (isProduction) {
-    console.log(
-      `will set sessionstore to memcache ${redisUrl}`
-    );
-    SESSION_CONF.store = new RedisStore({ client: redisClient });
-  }
+  // if (isProduction) {
+  //   console.log(
+  //     `will set sessionstore to memcache ${redisUrl}`
+  //   );
+  //   SESSION_CONF.store = new RedisStore({ client: redisClient });
+  // }
   if (constants.HTTPS_COOKIES === true) {
     SESSION_CONF.cookie.secure = true; // serve secure cookies, i.e. only over https, only for production
   }

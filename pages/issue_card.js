@@ -75,7 +75,7 @@ class IssueServiceCard extends React.Component {
     // mapstatetoprops overrides these values if they match
     return {
       sessionData: userData,
-      credentialToIssueType: credentialToIssueType,
+      credentialToIssueType: reduxStore.getState().credentialToIssue,
       qrData: reduxStore.getState().qrData,
       gatacaSesssion: reduxStore.getState().gatacaSession,
       vcSent: false,
@@ -170,6 +170,8 @@ class IssueServiceCard extends React.Component {
           <WebsocketComp
             sessionId={this.props.gatacaSession}
             onIssueFinished={this.onIssueFinished}
+            userData = {this.props.sessionData}
+            issueTemplate={this.props.credentialToIssueType}
           />
         </Typography>
       );
@@ -192,6 +194,7 @@ function mapStateToProps(state) {
     isFetching: state.fetching,
     qrData: state.qrData,
     sessionData: state.sessionData,
+    
     userSelection: state.userSelection, // the attributes selected by the user to be included in a VC,
     baseUrl: state.baseUrl,
     DID: state.DID,
@@ -202,7 +205,7 @@ function mapStateToProps(state) {
     endpoint: state.endpoint,
     credQROffer: state.credQROffer,
     serverPort: state.serverPort,
-    credentialToIssueType: state.credentialToIssueType,
+    credentialToIssueType: state.credentialToIssue,
     gatacaQR: state.gatacaQR,
     gatacaSession: state.gatacaSession,
   };

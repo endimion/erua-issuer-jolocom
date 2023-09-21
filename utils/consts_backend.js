@@ -1,3 +1,5 @@
+require("dotenv").config()
+
 module.exports = Object.freeze({
   PORT: parseInt(process.env.PORT, 10) || 5030,
   NODE_ENV: process.env.NODE_ENV,
@@ -11,7 +13,7 @@ module.exports = Object.freeze({
   BASE_PATH: process.env.BASE_PATH,
   SENDER_ID: process.env.SENDER_ID,
   CONNECTION_RESPONSE_URI: process.env.CONNECTION_RESPONSE_URI,
-  
+
   USER_INFO_PORT: process.env.USER_INFO_PORT
     ? process.env.USER_INFO_PORT
     : "8180",
@@ -22,17 +24,18 @@ module.exports = Object.freeze({
     ? process.env.OIDC_REDIRECT_URI
     : `http://localhost:5030/login/callback`,
 
-  OIDC_CLIENT: process.env.OIDC_CLIENT?process.env.OIDC_CLIENT:"erua-issuer",
-  OIDC_CLIENT_SECRET: process.env.OIDC_CLIENT_SECRET?process.env.OIDC_CLIENT_SECRET:"b272587a-c842-4e35-9ded-09782195c198",
-
+  OIDC_CLIENT: process.env.OIDC_CLIENT,
+  OIDC_CLIENT_SECRET: process.env.OIDC_CLIENT_SECRET,
 
   EMAIL_USER: process.env.EMAIL_USER,
   EMAIL_PASS: process.env.EMAIL_PASS,
   GATACA_CERTIFY_URL: "https://nucleus.gataca.io/admin/v1/api_keys/login",
-  GATACA_CREDENTIAL_ISSUE_SESSION_URL:"https://certify.gataca.io/api/v1/issuanceRequests",
+  GATACA_CREDENTIAL_ISSUE_SESSION_URL:
+    "https://certify.gataca.io/api/v1/issuanceRequests",
 
-  WS_URL : process.env.WS_URL?process.env.WS_URL:"https://dss.aegean.gr",
-  WS_API: process.env.WS_API?process.env.WS_API:"https://dss.aegean.gr/gataca-helper"
-  
+  WS_URL: process.env.WS_URL ? process.env.WS_URL : "ws://localhost:5000",
+
+  CHECK_USER_WORKSHOPS: process.env.CHECK_USER_WORKSHOPS
+    ? process.env.CHECK_USER_WORKSHOPS
+    : "https://jsonplaceholder.typicode.com/posts",
 });
-

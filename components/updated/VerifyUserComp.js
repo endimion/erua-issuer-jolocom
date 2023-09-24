@@ -57,10 +57,10 @@ const VerifyUser = (props) => {
 
   return (
     <LayoutNew home alert={!props.userDetails} activeStep={1}>
-      <>
-        <Typography variant="h5" sx={{ mt: 6, mb: 4 }}>
+      <div className="content-wrapper">
+        <h2>
           Before we continue, Is your Personal Information accurate?
-        </Typography>
+        </h2>
         <TableContainer>
           <Table aria-label="simple table">
             <TableBody>
@@ -84,27 +84,25 @@ const VerifyUser = (props) => {
             </TableBody>
           </Table>
         </TableContainer>
-      </>
-
-      <Box sx={{ display: "flex", flexDirection: "row", pt: 4 }}>
-        <Box sx={{ flex: "1 1 auto" }} />
-        <Button
-          variant="contained"
-          size="large"
-          type="submit"
-          onClick={(event) => {
-            event.preventDefault();
-            console.log(props.userDetails);
-            //window.location.href = props.basePath? `/${props.basePath}/issue_card?sessionId=${props.sessionId}`:`/issue_card?sessionId=${props.sessionId}`;
-            window.location.href = props.basePath
-              ? `/${props.basePath}/select_credential?sessionId=${props.sessionId}`
-              : `/select_credential?sessionId=${props.sessionId}`;
-          }}
-        >
-          {/* <Link href={contunueLink}>Continue</Link> */}
-          Continue
-        </Button>
-      </Box>
+        <Box sx={{ display: "flex", flexDirection: "row", justifyContent:"center", pt: 4 }}>
+          <Button
+              variant="contained"
+              size="large"
+              type="submit"
+              onClick={(event) => {
+                event.preventDefault();
+                console.log(props.userDetails);
+                //window.location.href = props.basePath? `/${props.basePath}/issue_card?sessionId=${props.sessionId}`:`/issue_card?sessionId=${props.sessionId}`;
+                window.location.href = props.basePath
+                    ? `/${props.basePath}/select_credential?sessionId=${props.sessionId}`
+                    : `/select_credential?sessionId=${props.sessionId}`;
+              }}
+          >
+            {/* <Link href={contunueLink}>Continue</Link> */}
+            Continue
+          </Button>
+        </Box>
+      </div>
     </LayoutNew>
   );
 };

@@ -52,6 +52,7 @@ const WebsocketComp = (props) => {
         type: "start-session",
         id: props.sessionId,
         socketID: socket.id,
+        credential: props.issueTemplate
       });
     });
     socket.on("disconnect", () => {

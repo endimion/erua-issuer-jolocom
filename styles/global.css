@@ -138,6 +138,23 @@ h2{
     margin-top:2rem;
 }
 
+.deeplink-content{
+    display: block;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr;
+    gap: 1rem;
+    align-items: center;
+    justify-content: center;
+    margin-top:2rem;
+}
+
+.deeplink-button-wrapper{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 7rem;
+}
+
 .login-content{
     max-width:300px;
 }
@@ -274,6 +291,11 @@ h2{
         display:flex;
         flex-direction:column;
     }
+
+    .deeplink-content{
+        display: block;
+    }
+
     .content-wrapper{
         padding:1.5rem;
     }

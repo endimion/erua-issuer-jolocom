@@ -38,6 +38,7 @@ const initialState = {
   credentialToIssue: null,
   gatacaQR: null,
   gatacaSession: null,
+  gatacaDeepLink: null,
 };
 
 export const actionTypes = {
@@ -96,7 +97,10 @@ export const actionTypes = {
 const reducer = (state = initialState, action) => {
   switch (action.type) {
     case actionTypes.SET_GATACA_QR_DATA:
-      return { ...state, gatacaQR: action.data.qr, gatacaSession: action.data.gatacaSession,  fetching: false, };
+      return { ...state, 
+        gatacaQR: action.data.qr, 
+        gatacaDeepLink: action.data.deepLink,
+        gatacaSession: action.data.gatacaSession,  fetching: false, };
 
     case actionTypes.SET_CREDENTIAL_TO_ISSUE_TYPE:
       return { ...state, credentialToIssue: action.data };
@@ -667,6 +671,9 @@ export function makeGatacaIssueOffer(
     credentialType: credentialType,
     userData: userData,
   };
+
+  console.log("store.js:: makeGatacaIssueOffer")
+  console.log(postData)
 
   //console.log(`store.js makeGatacaIssueOffer isMobile ${isMobile}`)
   if (isMobile) {

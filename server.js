@@ -16,8 +16,6 @@ import { getSessionData, setOrUpdateSessionData } from "./services/redis";
 // import expressWinston from "express-winston";
 const express = require("express");
 
-
-
 // QR Generation
 const qr = require("qr-image");
 const imageDataURI = require("image-data-uri");
@@ -44,8 +42,6 @@ const SESSION_CONF = getSessionConfg(isProduction);
 let serverConfiguration = { endpoint: "" };
 
 app.prepare().then(async () => {
-  
-  
   const server = express();
   server.set("trust proxy", 1); // trust first proxy
   server.use(bodyParser.urlencoded({ extended: true }));
@@ -111,19 +107,51 @@ app.prepare().then(async () => {
   // **********************************
 
   //gataca
-  //TODO move this into a service 
+  //TODO move this into a service
   server.post(
     ["/makeGatacaIssueOffer", `\/${constants.BASE_PATH}/makeGatacaIssueOffer`],
     async (req, res) => {
       console.log("server.js /makeGatacaIssueOffer");
       let sessionId = req.body.sessionId;
       let userData = req.body.sessionId.userData;
+      let credentialType = req.body.credentialType;
+      console.log("makeGatacaIssueOffer credentialType");
+      console.log(credentialType);
 
-      let basicAuthString =
-        process.env.GATACA_APP + ":" + process.env.GATACA_PASS;
+      let basicAuthString;
+      let cacheVariable;
+      let gatacaIssuanceTemplate;
+
+      if (credentialType === "Alliance_ID") {
+        basicAuthString =
+          process.env.GATACA_APP_STUDENT_ID +
+          ":" +
+          process.env.GATACA_APP_STUDENT_ID_PASS;
+        cacheVariable = "gataca_jwt_student";
+        gatacaIssuanceTemplate = "AllianceID_Issuance";
+        console.log("server.js AllianceID_Issuance ");
+        console.log(basicAuthString);
+      } else {
+        if (credentialType === "Student_ID") {
+          basicAuthString =
+            process.env.GATACA_APP_STUDENT_ID +
+            ":" +
+            process.env.GATACA_APP_STUDENT_ID_PASS;
+          cacheVariable = "gataca_jwt_student";
+          gatacaIssuanceTemplate = "StudentID_Issuance";
+          console.log("server.js Student_ID ");
+          console.log(basicAuthString);
+        } else {
+          basicAuthString =
+            process.env.GATACA_APP + ":" + process.env.GATACA_PASS;
+          cacheVariable = "gataca_jwt";
+          gatacaIssuanceTemplate = "Academic_And_AllianceID";
+        }
+      }
+
       let buff = new Buffer(basicAuthString);
       let base64data = buff.toString("base64");
-      console.log(base64data);
+      // console.log(base64data);
       let options = {
         method: "POST",
         url: constants.GATACA_CERTIFY_URL,
@@ -132,19 +160,24 @@ app.prepare().then(async () => {
         },
       };
 
+      let gatacaAuthToken;
+
+      gatacaAuthToken = await getSessionData("gataca_jwt", cacheVariable);
+      if (!gatacaAuthToken || isJwtTokenExpired(gatacaAuthToken)) {
+        const gatacaTokenResponse = await axios.request(options);
+        gatacaAuthToken = gatacaTokenResponse.headers.token;
+        console.log(
+          "severs.js makeGatacaIssueOffer will ask for new authtoken  for " +
+            cacheVariable +
+            " and got " +
+            gatacaAuthToken
+        );
+        setOrUpdateSessionData("gataca_jwt", cacheVariable, gatacaAuthToken);
+      }
+
       try {
         // by setting the sessionId to "gataca_jwt" same as the variable this becomes a globaly accessible cached value
         // so all calls will use the same token until its expired
-
-        let gatacaAuthToken = await getSessionData("gataca_jwt", "gataca_jwt");
-        if (!gatacaAuthToken || isJwtTokenExpired(gatacaAuthToken)) {
-          console.log(
-            "severs.js makeGatacaIssueOffer will ask for new authtoken"
-          );
-          const gatacaTokenResponse = await axios.request(options);
-          gatacaAuthToken = gatacaTokenResponse.headers.token;
-          setOrUpdateSessionData("gataca_jwt", "gataca_jwt", gatacaAuthToken);
-        }
 
         options = {
           method: "POST",
@@ -153,15 +186,15 @@ app.prepare().then(async () => {
             "Content-Type": "application/json",
             Authorization: `jwt ${gatacaAuthToken}`,
           },
-          data: { group: "Academic_And_AllianceID" },
+          data: { group: gatacaIssuanceTemplate },
         };
         axios
           .request(options)
           .then(async function (response) {
             console.log(response.data.id);
             let issueSessionId = response.data.id;
-            console.log("SERVER.js makeGatacaIssueOffer")
-            console.log("SERVER.js GATACA SESSION" + issueSessionId)
+            console.log("SERVER.js makeGatacaIssueOffer");
+            console.log("SERVER.js GATACA SESSION" + issueSessionId);
             let buff = new Buffer("https%3A%2F%2Fcertify.gataca.io");
             let base64Callbackdata = buff.toString("base64");
 
@@ -174,6 +207,7 @@ app.prepare().then(async () => {
               "https://gataca.page.link/?apn=com.gatacaapp&ibi=com.gataca.wallet&link=" +
               encodeURIComponent(qrPartialData);
 
+            console.log("Server.js GATACA ISSUE OFFER RESPONSE");
             console.log(qrData);
 
             let code = qr.image(qrData, {
@@ -187,14 +221,19 @@ app.prepare().then(async () => {
               await streamToBuffer(code),
               mediaType
             );
-            res.send({ qr: encodedQR, gatacaSession: issueSessionId});
+
+            const regex = /https:\/\/gataca\.page\.link\//;
+            const replacement = 'openid://gataca.page.link/';
+            let deepLinkData = qrData.replace(regex,replacement)
+            res.send({ qr: encodedQR, deepLink: deepLinkData, gatacaSession: issueSessionId });
           })
           .catch(function (error) {
             console.error(error);
             res.send({ error: error });
           });
       } catch (error) {
-        console.error(error);
+        if (error.response) console.error(error.response.data);
+        else console.log(error);
         res.send({ error: error });
       }
     }
@@ -247,6 +286,4 @@ app.prepare().then(async () => {
   server.all("*", async (req, res) => {
     return handle(req, res);
   });
-
-
 });

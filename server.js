@@ -112,130 +112,146 @@ app.prepare().then(async () => {
     ["/makeGatacaIssueOffer", `\/${constants.BASE_PATH}/makeGatacaIssueOffer`],
     async (req, res) => {
       console.log("server.js /makeGatacaIssueOffer");
-      let sessionId = req.body.sessionId;
-      let userData = req.body.sessionId.userData;
       let credentialType = req.body.credentialType;
       console.log("makeGatacaIssueOffer credentialType");
       console.log(credentialType);
-
       let basicAuthString;
       let cacheVariable;
       let gatacaIssuanceTemplate;
 
+      // default 
+      gatacaIssuanceTemplate = "Academic_And_AllianceID";
+      // else check cases
       if (credentialType === "Alliance_ID") {
-        basicAuthString =
-          process.env.GATACA_APP_STUDENT_ID +
-          ":" +
-          process.env.GATACA_APP_STUDENT_ID_PASS;
-        cacheVariable = "gataca_jwt_student";
         gatacaIssuanceTemplate = "AllianceID_Issuance";
-        console.log("server.js AllianceID_Issuance ");
-        console.log(basicAuthString);
-      } else {
-        if (credentialType === "Student_ID") {
-          basicAuthString =
-            process.env.GATACA_APP_STUDENT_ID +
-            ":" +
-            process.env.GATACA_APP_STUDENT_ID_PASS;
-          cacheVariable = "gataca_jwt_student";
-          gatacaIssuanceTemplate = "StudentID_Issuance";
-          console.log("server.js Student_ID ");
-          console.log(basicAuthString);
-        } else {
-          basicAuthString =
-            process.env.GATACA_APP + ":" + process.env.GATACA_PASS;
-          cacheVariable = "gataca_jwt";
-          gatacaIssuanceTemplate = "Academic_And_AllianceID";
-        }
+      }
+      if (credentialType === "Student_ID") {
+        gatacaIssuanceTemplate = "StudentID_Issuance";
       }
 
-      let buff = new Buffer(basicAuthString);
-      let base64data = buff.toString("base64");
-      // console.log(base64data);
-      let options = {
-        method: "POST",
-        url: constants.GATACA_CERTIFY_URL,
-        headers: {
-          Authorization: `Basic ${base64data}`,
-        },
-      };
 
-      let gatacaAuthToken;
 
-      gatacaAuthToken = await getSessionData("gataca_jwt", cacheVariable);
-      if (!gatacaAuthToken || isJwtTokenExpired(gatacaAuthToken)) {
-        const gatacaTokenResponse = await axios.request(options);
-        gatacaAuthToken = gatacaTokenResponse.headers.token;
-        console.log(
-          "severs.js makeGatacaIssueOffer will ask for new authtoken  for " +
-            cacheVariable +
-            " and got " +
-            gatacaAuthToken
-        );
-        setOrUpdateSessionData("gataca_jwt", cacheVariable, gatacaAuthToken);
-      }
+      res.send({ qr: encodedQR, deepLink: deepLinkData, gatacaSession: issueSessionId });
 
-      try {
-        // by setting the sessionId to "gataca_jwt" same as the variable this becomes a globaly accessible cached value
-        // so all calls will use the same token until its expired
+      // let sessionId = req.body.sessionId;
+      // let userData = req.body.sessionId.userData;
+    
+   
 
-        options = {
-          method: "POST",
-          url: constants.GATACA_CREDENTIAL_ISSUE_SESSION_URL,
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `jwt ${gatacaAuthToken}`,
-          },
-          data: { group: gatacaIssuanceTemplate },
-        };
-        axios
-          .request(options)
-          .then(async function (response) {
-            console.log(response.data.id);
-            let issueSessionId = response.data.id;
-            console.log("SERVER.js makeGatacaIssueOffer");
-            console.log("SERVER.js GATACA SESSION" + issueSessionId);
-            let buff = new Buffer("https%3A%2F%2Fcertify.gataca.io");
-            let base64Callbackdata = buff.toString("base64");
+      // if (credentialType === "Alliance_ID") {
+      //   basicAuthString =
+      //     process.env.GATACA_APP_STUDENT_ID +
+      //     ":" +
+      //     process.env.GATACA_APP_STUDENT_ID_PASS;
+      //   cacheVariable = "gataca_jwt_student";
+      //   gatacaIssuanceTemplate = "AllianceID_Issuance";
+      //   console.log("server.js AllianceID_Issuance ");
+      //   console.log(basicAuthString);
+      // } else {
+      //   if (credentialType === "Student_ID") {
+      //     basicAuthString =
+      //       process.env.GATACA_APP_STUDENT_ID +
+      //       ":" +
+      //       process.env.GATACA_APP_STUDENT_ID_PASS;
+      //     cacheVariable = "gataca_jwt_student";
+      //     gatacaIssuanceTemplate = "StudentID_Issuance";
+      //     console.log("server.js Student_ID ");
+      //     console.log(basicAuthString);
+      //   } else {
+      //     basicAuthString =
+      //       process.env.GATACA_APP + ":" + process.env.GATACA_PASS;
+      //     cacheVariable = "gataca_jwt";
+      //     gatacaIssuanceTemplate = "Academic_And_AllianceID";
+      //   }
+      // }
 
-            let qrPartialData =
-              "https://gataca.page.link/credential?process=" +
-              issueSessionId +
-              "&callback=" +
-              base64Callbackdata;
-            let qrData =
-              "https://gataca.page.link/?apn=com.gatacaapp&ibi=com.gataca.wallet&link=" +
-              encodeURIComponent(qrPartialData);
+      // let buff = new Buffer(basicAuthString);
+      // let base64data = buff.toString("base64");
+      // // console.log(base64data);
+      // let options = {
+      //   method: "POST",
+      //   url: constants.GATACA_CERTIFY_URL,
+      //   headers: {
+      //     Authorization: `Basic ${base64data}`,
+      //   },
+      // };
 
-            console.log("Server.js GATACA ISSUE OFFER RESPONSE");
-            console.log(qrData);
+      // let gatacaAuthToken;
 
-            let code = qr.image(qrData, {
-              type: "png",
-              ec_level: "H",
-              size: 10,
-              margin: 10,
-            });
-            let mediaType = "PNG";
-            let encodedQR = imageDataURI.encode(
-              await streamToBuffer(code),
-              mediaType
-            );
+      // gatacaAuthToken = await getSessionData("gataca_jwt", cacheVariable);
+      // if (!gatacaAuthToken || isJwtTokenExpired(gatacaAuthToken)) {
+      //   const gatacaTokenResponse = await axios.request(options);
+      //   gatacaAuthToken = gatacaTokenResponse.headers.token;
+      //   console.log(
+      //     "severs.js makeGatacaIssueOffer will ask for new authtoken  for " +
+      //       cacheVariable +
+      //       " and got " +
+      //       gatacaAuthToken
+      //   );
+      //   setOrUpdateSessionData("gataca_jwt", cacheVariable, gatacaAuthToken);
+      // }
 
-            const regex = /https:\/\/gataca\.page\.link\//;
-            const replacement = 'openid://gataca.page.link/';
-            let deepLinkData = qrData.replace(regex,replacement)
-            res.send({ qr: encodedQR, deepLink: deepLinkData, gatacaSession: issueSessionId });
-          })
-          .catch(function (error) {
-            console.error(error);
-            res.send({ error: error });
-          });
-      } catch (error) {
-        if (error.response) console.error(error.response.data);
-        else console.log(error);
-        res.send({ error: error });
-      }
+      // try {
+      //   // by setting the sessionId to "gataca_jwt" same as the variable this becomes a globaly accessible cached value
+      //   // so all calls will use the same token until its expired
+
+      //   options = {
+      //     method: "POST",
+      //     url: constants.GATACA_CREDENTIAL_ISSUE_SESSION_URL,
+      //     headers: {
+      //       "Content-Type": "application/json",
+      //       Authorization: `jwt ${gatacaAuthToken}`,
+      //     },
+      //     data: { group: gatacaIssuanceTemplate },
+      //   };
+      //   axios
+      //     .request(options)
+      //     .then(async function (response) {
+      //       console.log(response.data.id);
+      //       let issueSessionId = response.data.id;
+      //       console.log("SERVER.js makeGatacaIssueOffer");
+      //       console.log("SERVER.js GATACA SESSION" + issueSessionId);
+      //       let buff = new Buffer("https%3A%2F%2Fcertify.gataca.io");
+      //       let base64Callbackdata = buff.toString("base64");
+
+      //       let qrPartialData =
+      //         "https://gataca.page.link/credential?process=" +
+      //         issueSessionId +
+      //         "&callback=" +
+      //         base64Callbackdata;
+      //       let qrData =
+      //         "https://gataca.page.link/?apn=com.gatacaapp&ibi=com.gataca.wallet&link=" +
+      //         encodeURIComponent(qrPartialData);
+
+      //       console.log("Server.js GATACA ISSUE OFFER RESPONSE");
+      //       console.log(qrData);
+
+      //       let code = qr.image(qrData, {
+      //         type: "png",
+      //         ec_level: "H",
+      //         size: 10,
+      //         margin: 10,
+      //       });
+      //       let mediaType = "PNG";
+      //       let encodedQR = imageDataURI.encode(
+      //         await streamToBuffer(code),
+      //         mediaType
+      //       );
+
+      //       const regex = /https:\/\/gataca\.page\.link\//;
+      //       const replacement = 'openid-credential-offer://gataca.page.link/';
+      //       let deepLinkData = qrData.replace(regex,replacement)
+      //       res.send({ qr: encodedQR, deepLink: deepLinkData, gatacaSession: issueSessionId });
+      //     })
+      //     .catch(function (error) {
+      //       console.error(error);
+      //       res.send({ error: error });
+      //     });
+      // } catch (error) {
+      //   if (error.response) console.error(error.response.data);
+      //   else console.log(error);
+      //   res.send({ error: error });
+      // }
     }
   );
   // **********************************

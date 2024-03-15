@@ -37,8 +37,6 @@ const configServer = (
           return serverConfiguration.endpoint;
         });
     } else {
-    
-
       server.listen(port, async (err) => {
         if (err) throw err;
 
@@ -48,10 +46,15 @@ const configServer = (
           );
           serverConfiguration.endpoint = constants.ENDPOINT;
           console.log(`configuring the passport`);
-          let { passport, client } = await getConfiguredPassport(
-            isProduction,
-            serverConfiguration.endpoint
-          );
+          try {
+            let { passport, client } = await getConfiguredPassport(
+              isProduction,
+              serverConfiguration.endpoint
+            );
+          } catch (err) {
+            console.log(err);
+          }
+
           console.log(`serverConfig.js:: finshed passport config`);
           // console.log(client);
           resolve({
@@ -65,10 +68,14 @@ const configServer = (
             serverConfiguration.endpoint = ngrokUrl;
             console.log(`running, open at ${serverConfiguration.endpoint}`);
             console.log(`configuring the passport`);
-            let { passport, client } = await getConfiguredPassport(
-              isProduction,
-              ngrokUrl
-            );
+            try {
+              let { passport, client } = await getConfiguredPassport(
+                isProduction,
+                ngrokUrl
+              );
+            } catch (err) {
+              console.log(err);
+            }
 
             resolve({
               endpoint: serverConfiguration.endpoint,

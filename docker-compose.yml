@@ -11,7 +11,7 @@ services:
 
    erua-issuer:
    # image: endimion13/erua-issuer:0.0.1j
-    image: endimion13/erua-gataca-issuer:0.0.1b
+    image: endimion13/erua-gataca-issuer:0.0.2f
     environment:
       NODE_ENV: "production"
       # for SSL: KEY_PATH:

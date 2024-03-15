@@ -33,6 +33,7 @@ const app = next({ dev });
 const handle = app.getRequestHandler();
 const cookieParser = require("cookie-parser");
 const { passportController } = require("./controllers/security/passport");
+const path = require('path'); // Add this line to require the path module
 
 // server session cache config
 const isProduction = constants.NODE_ENV === "production";
@@ -48,6 +49,9 @@ app.prepare().then(async () => {
   server.use(bodyParser.json({ type: "*/*" }));
   server.use(session(SESSION_CONF));
   server.use(cookieParser());
+
+
+  // server.use('/_next', express.static(path.join(__dirname, '.next')))
 
   //CONTROLLERS
 
@@ -70,7 +74,7 @@ app.prepare().then(async () => {
     ["/login_success", `\/${constants.BASE_PATH}/login_success`],
     async (req, res) => {
       console.log("/login_success");
-      // console.log(req.session.passport.user)
+      console.log(req.session.passport.user);
       return verifyUserDetailsPage(app, req, res, serverConfiguration.endpoint);
     }
   );
@@ -128,13 +132,16 @@ app.prepare().then(async () => {
       if (credentialType === "Student_ID") {
         gatacaIssuanceTemplate = "StudentID_Issuance";
       }
-      if (credentialType === "Educational_ID") {
-        gatacaIssuanceTemplate = "EducationalID_Issuance";
+      if (credentialType === "EDUCATIONAL_ID") {
+        gatacaIssuanceTemplate = "EDUCATIONAL_ID";
       }
 
       let requestURI = process.env.WS_API
         ? process.env.WS_API + "/makeIssueOffer/" + gatacaIssuanceTemplate
-        : "http://localhost:5000" + "/makeIssueOffer/" + gatacaIssuanceTemplate;
+        : "https://dss.aegean.gr/gataca-helper" +
+          "/makeIssueOffer/" +
+          gatacaIssuanceTemplate;
+      //"http://localhost:5000" + "/makeIssueOffer/" + gatacaIssuanceTemplate;
 
       console.log(`server.js: will make a request to ${requestURI}`);
 
@@ -164,7 +171,11 @@ app.prepare().then(async () => {
     ],
     async (req, res) => {
       console.log("/start-session");
-      await startSession(app, req, res, serverConfiguration.endpoint);
+      try {
+        await startSession(app, req, res, serverConfiguration.endpoint);
+      } catch (err) {
+        console.log(err);
+      }
     }
   );
 
@@ -176,29 +187,44 @@ app.prepare().then(async () => {
     ],
     async (req, res) => {
       console.log("/update-session ");
-      res.send(await updateSession(req, res, serverConfiguration.endpoint));
+      try {
+        res.send(await updateSession(req, res, serverConfiguration.endpoint));
+      } catch (err) {
+        console.log(err);
+        res.send(null);
+      }
     }
   );
 
   // this call needs to be on the end of the config as, the handle(*,*) must be last
   // otherwise the rest of the controllers are ignored
-  let { endpoint, passport, client } = await configServer(
-    server,
-    https,
-    constants.PORT, //port,
-    isProduction,
-    handle,
-    serverConfiguration
-  );
-  let serverPassport = passport;
-  let oidcClient = client;
-  // grids login flow, all /login*.* uris will be handles by the passportController router
-  server.use(["/login", `\/${constants.BASE_PATH}/login`], passportController);
+  try {
+    let { endpoint, passport, client } = await configServer(
+      server,
+      https,
+      constants.PORT, //port,
+      isProduction,
+      handle,
+      serverConfiguration
+    );
+    let serverPassport = passport;
+    let oidcClient = client;
+    // grids login flow, all /login*.* uris will be handles by the passportController router
+    server.use(
+      ["/login", `\/${constants.BASE_PATH}/login`],
+      passportController
+    );
 
-  server.use("/jwks", jwksController);
-  server.use("/query", searchDbController);
-  server.use("/jwks", jwksController);
-  server.all("*", async (req, res) => {
-    return handle(req, res);
-  });
+    server.use("/jwks", jwksController);
+    server.use("/query", searchDbController);
+    
+    server.all("*", async (req, res) => {
+      return handle(req, res);
+    });
+
+
+
+  } catch (err) {
+    console.log(err);
+  }
 });

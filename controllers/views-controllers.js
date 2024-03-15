@@ -45,6 +45,7 @@ const selectCredentialtoIssue = async (app, req, res, serverEndpoint) => {
   // TODO
   // API call to see what Credentials the user is allowed to Issue
   req.optionalCredentials = [
+    { type: "EDUCATIONAL_ID", name: "ERUA Alliance: Educational-ID" },
     { type: "Student_ID", name: "ERUA Alliance: Student-ID" },
     { type: "Alliance_ID", name: "ERUA Alliance: Alliance-ID" },
     { type: "eruaID", name: "ERUA Alliance: Academic-ID" },

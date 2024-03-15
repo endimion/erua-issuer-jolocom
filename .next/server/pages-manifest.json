@@ -2,6 +2,5 @@
   "/_app": "pages/_app.js",
   "/_document": "pages/_document.js",
   "/_error": "pages/_error.js",
-  "/issue_card": "pages/issue_card.js",
-  "/select_credential": "pages/select_credential.js"
+  "/": "pages/index.js"
 }

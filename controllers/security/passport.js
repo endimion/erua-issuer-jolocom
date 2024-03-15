@@ -10,7 +10,6 @@ const jose = require("node-jose");
 const fs = require("fs");
 const constants = require("../../utils/consts");
 
-
 // Part 3, create a JWKS
 const keyStore = jose.JWK.createKeyStore();
 keyStore
@@ -38,12 +37,16 @@ const getConfiguredPassport = async (
   const clientSecret = constants.OIDC_CLIENT_SECRET; //"b272587a-c842-4e35-9ded-09782195c198"
 
   // Part 4b, discover Curity Server metadata and configure the OIDC client
-  const client = await discoverAndCreateClient({
-    issuerUrl: _issuer_url,
-    clientID: clinteId,
-    clientSecret: clientSecret,
-    redirectUris: [_redirect_uri],
-  });
+  try {
+    const client = await discoverAndCreateClient({
+      issuerUrl: _issuer_url,
+      clientID: clinteId,
+      clientSecret: clientSecret,
+      redirectUris: [_redirect_uri],
+    });
+  } catch (err) {
+    console.log(err);
+  }
 
   let _user_info_request = constants.USER_INFO;
   let _user_info_port = constants.USER_INFO_PORT;
@@ -65,7 +68,6 @@ const getConfiguredPassport = async (
     done(null, user);
   });
 
- 
   router.use(passport.initialize());
   router.use(passport.session());
   // Part 2, configure authentication endpoints
@@ -99,8 +101,8 @@ const getConfiguredPassport = async (
     async (req, res) => {
       console.log("passport.js:: will now redirect to the view");
 
-      console.log("PASSPORT.JS REQ.USEr");
-      console.log(req.user);
+      // console.log("PASSPORT.JS REQ.USEr");
+      // console.log(req.user);
       let redirect_uri = "/login_success";
 
       console.log(`passport.js:: will redirect to ${redirect_uri}`);
@@ -109,7 +111,6 @@ const getConfiguredPassport = async (
   );
   return { passport: passport, client: client };
 };
-
 
 const addClaimsToStrategy = (
   claims,
